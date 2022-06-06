@@ -66,16 +66,19 @@ int main(int argc, char **argv)
 			}
 	
 			int pid = fork();
-			
+			if(pid == 0)
+			{
+				remove("exec-hot-reload");
+			}
+			wait(&pid);
+			pid = fork();
 			if(pid == 0)
 			{
 				char *compile_args[] = {command, file_name, "-o","exec-hot-reload",NULL};
 				execvp(compile_args[0],compile_args);
-				exit(errno);
 				exit(EXIT_SUCCESS);
 			}
 			wait(&pid);
-			if(WIFEXITED(pid)) fprintf(stderr, "%d", WEXITSTATUS(pid));
 			pid = fork();
 			if(pid == 0)
 			{
