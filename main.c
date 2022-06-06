@@ -3,22 +3,29 @@
 #include "unistd.h"
 #include "stdbool.h"
 #include "string.h"
+ #include <errno.h>
 
 #define VERBOSE false
-#define BUFFER_SIZE 10000
-#define PROGRAM_NAME main
+#define BUFFER_SIZE 1000000
 int main(int argc, char **argv)
 {
-	if(argc != 2){
-		fprintf(stderr, "No file_namegiven [string]");
+	if(argc < 2 || argc > 3){
+		fprintf(stderr, "No file_name given [string]\n");
 		exit(EXIT_FAILURE);
 	}
-	char c, *file_name;
+	char c, *file_name, *command;
 	FILE *fp;
 	bool anyChange;
-	char buffer[1000];
+	char buffer[BUFFER_SIZE];
 
 	file_name = argv[1];
+	if(argv[2])
+	{
+		command = argv[2];
+	}else{
+		command = "cc";
+	}
+
 	while(true)
 	{
 		fp = fopen(file_name, "r");
@@ -26,7 +33,8 @@ int main(int argc, char **argv)
 		if(fp == NULL)
 		{
 			fprintf(stderr, "Error while opening file");
-			exit(EXIT_FAILURE);
+			// exit(EXIT_FAILURE);
+			continue;
 		}
 		anyChange = false;
 		int i = 0;
@@ -56,28 +64,33 @@ int main(int argc, char **argv)
 				fprintf(stdout, "Filename: %s\n", file_name);
 				fprintf(stdout, "Change detected\n");
 			}
+	
 			int pid = fork();
+			
 			if(pid == 0)
 			{
-				char *compile_args[] = {"cc", file_name, "-o","PROGRAM_NAME",NULL};
+				char *compile_args[] = {command, file_name, "-o","exec-hot-reload",NULL};
 				execvp(compile_args[0],compile_args);
+				exit(errno);
 				exit(EXIT_SUCCESS);
 			}
 			wait(&pid);
+			if(WIFEXITED(pid)) fprintf(stderr, "%d", WEXITSTATUS(pid));
 			pid = fork();
 			if(pid == 0)
 			{
-				char *executable = "./PROGRAM_NAME";
+				char *executable = "exec-hot-reload";
 				char *args[] = { executable ,NULL};
 				execv(args[0], args);
 				exit(EXIT_SUCCESS);
 			}
 			wait(&pid);
 			fprintf(stdout, "\n");
-		}
-		
+		}		
 		fclose(fp);
 		sleep(1);
 	}
+	
+	free(file_name);
 	return 0;
 }
