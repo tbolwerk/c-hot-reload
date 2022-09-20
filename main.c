@@ -6,17 +6,27 @@
  #include <errno.h>
 
 #define VERBOSE false
-#define BUFFER_SIZE 1000000
+size_t file_size(FILE *fp)
+{
+	size_t prev = ftell(fp);
+	fseek(fp, 0L, SEEK_END);
+	size_t sz = ftell(fp);
+	fseek(fp, prev, SEEK_SET);
+	return sz;
+}
 int main(int argc, char **argv)
 {
 	if(argc < 2 || argc > 3){
-		fprintf(stderr, "No file_name given [string]\n");
+		fprintf(stderr, "OVERVIEW:\t hot-reload-c\n");
+		fprintf(stderr, "USAGE:\t tool file_name [compiler]\n");
+		fprintf(stderr, "DEFAULT:\t tool file_name cc\n");
 		exit(EXIT_FAILURE);
 	}
 	char c, *file_name, *command;
 	FILE *fp;
 	bool anyChange;
-	char buffer[BUFFER_SIZE];
+	size_t BUFFER_SIZE = 0;
+	char* buffer = NULL; 
 
 	file_name = argv[1];
 	if(argv[2])
@@ -29,11 +39,15 @@ int main(int argc, char **argv)
 	while(true)
 	{
 		fp = fopen(file_name, "r");
-		
+		if(BUFFER_SIZE != file_size(fp))
+		{
+			free(buffer);
+			BUFFER_SIZE = file_size(fp);
+			buffer = malloc(file_size(fp));
+		}
 		if(fp == NULL)
 		{
 			fprintf(stderr, "Error while opening file");
-			// exit(EXIT_FAILURE);
 			continue;
 		}
 		anyChange = false;
@@ -48,7 +62,7 @@ int main(int argc, char **argv)
 			{
 				fprintf(stdout, "%c", c);
 			}
-			if((buffer[i] == c) == 0)
+			if(buffer[i] != c)
 			{
 				buffer[i] = c;
 				if(anyChange == false){
