@@ -14,6 +14,7 @@ size_t file_size(FILE *fp)
 	fseek(fp, prev, SEEK_SET);
 	return sz;
 }
+
 int main(int argc, char **argv)
 {
 	if(argc < 2 || argc > 3){
@@ -109,5 +110,6 @@ int main(int argc, char **argv)
 	}
 	
 	free(file_name);
+	exit(EXIT_SUCCESS);
 	return 0;
 }
